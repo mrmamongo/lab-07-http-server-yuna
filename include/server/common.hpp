@@ -2,8 +2,8 @@
 // Created by lamp on 17.03.2021.
 //
 
-#ifndef HTTP_SERVER_COMMON_HPP
-#define HTTP_SERVER_COMMON_HPP
+#ifndef INCLUDE_SERVER_COMMON_HPP_
+#define INCLUDE_SERVER_COMMON_HPP_
 
 
 #include <boost/log/trivial.hpp>
@@ -33,14 +33,14 @@ using json = nlohmann::json;
 #include <fstream>
 
 void init(){
-  boost::log::add_file_log( boost::log::keywords::file_name = "logs/server_%5N.log",
-                            boost::log::keywords::rotation_size = 10 * 1024 * 1024,
-                            boost::log::keywords::time_based_rotation =
-                                boost::log::sinks::file::rotation_at_time_point(0, 0, 0),
-                            boost::log::keywords::format = "[%TimeStamp%][%ThreadID%][%Severity%]: %Message%");
+  boost::log::add_file_log(
+      boost::log::keywords::file_name = "logs/server_%5N.log",
+      boost::log::keywords::rotation_size = 10 * 1024 * 1024,
+      boost::log::keywords::time_based_rotation =
+          boost::log::sinks::file::rotation_at_time_point(0, 0, 0),
+      boost::log::keywords::format = "[%TimeStamp%][%ThreadID%][%Severity%]: %Message%");
   boost::log::add_console_log(
-    std::cout, boost::log::keywords::format = "[%TimeStamp%][%ThreadID%][%Severity%]: %Message%"
-  );
+    std::cout, boost::log::keywords::format = "[%TimeStamp%][%ThreadID%][%Severity%]: %Message%");
 }
 
 template<class Stream>
@@ -79,9 +79,10 @@ class suggest_handler {
       return lhs.first > rhs.first;
     }
   };
+
  public:
-  explicit suggest_handler( const std::string& path = "data/suggestions.json")
-      :_path{path}{
+  explicit suggest_handler(const std::string& path = "data/suggestions.json")
+      : _path{path} {
     start_updating();
   }
   suggest_handler(const suggest_handler&) = delete;
@@ -91,15 +92,15 @@ class suggest_handler {
 
   ~suggest_handler() {
     _suggestions.clear();
-    if (_updating_thread.joinable()){
+    if (_updating_thread.joinable()) {
       _updating_thread.detach();
     }
   }
 
  private:
-  void start_updating(){
-    _updating_thread = std::thread([this]{
-      for(;;){
+  void start_updating() {
+    _updating_thread = std::thread([this] {
+      for (;;) {
         update();
         std::this_thread::sleep_for(std::chrono::seconds(900));
       }
@@ -122,9 +123,10 @@ class suggest_handler {
     }
   }
 
-  void write(const json& sug){
-    if(sug.contains("cost") && sug.contains("suggestion")){
-      _suggestions.emplace(std::make_pair(sug["cost"].get<int>(), sug["suggestion"].get<std::string>()));
+  void write(const json& sug) {
+    if (sug.contains("cost") && sug.contains("suggestion")) {
+      _suggestions.emplace(std::make_pair(
+          sug["cost"].get<int>(), sug["suggestion"].get<std::string>()));
     }
   }
 
@@ -134,19 +136,19 @@ class suggest_handler {
    * returns a json array which contains first 10 suggestions
    * with the subst
    */
-  json read(const std::string& subst = ""){
+  json read(const std::string& subst = "") {
     std::set<suggestion, suggest_comparator> out;
     std::shared_lock<std::shared_mutex> lock(_mutex);
-    for (auto&& sug : _suggestions){
-      if (sug.second.find(subst) || subst.empty()){
+    for (auto&& sug : _suggestions) {
+      if (sug.second.find(subst) || subst.empty()) {
         out.emplace(sug);
       }
     }
     json out_json;
     size_t max_sug = 10;
-    for (auto&& sug : out){
-      if (max_sug){
-        json s {{"cost", sug.first}, {"suggestion", sug.second}};
+    for (auto&& sug : out) {
+      if (max_sug) {
+        json s{{"cost", sug.first}, {"suggestion", sug.second}};
         out_json.emplace_back(s);
         max_sug--;
       } else {
@@ -165,4 +167,4 @@ class suggest_handler {
   std::thread _updating_thread;
 };
 
-#endif  // HTTP_SERVER_COMMON_HPP
+#endif  // INCLUDE_SERVER_COMMON_HPP_

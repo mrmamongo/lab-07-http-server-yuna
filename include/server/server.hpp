@@ -13,13 +13,16 @@ class server {
       : _context{1},
         _acceptor{_context,
                   {boost::asio::ip::address::from_string(host),
-                   static_cast<unsigned short>((port))}}, _handler() {}
-  server(const std::string& host, size_t port, const std::string& suggestions_path)
+                   static_cast<unsigned short>((port))}},
+        _handler() {}
+  server(const std::string& host, size_t port,
+         const std::string& suggestions_path)
       : _context{1},
         _acceptor{_context,
                   {boost::asio::ip::address::from_string(host),
-                   static_cast<unsigned short>((port))}}, _handler( suggestions_path) {}
-  ~server(){}
+                   static_cast<unsigned short>((port))}},
+        _handler(suggestions_path) {}
+  ~server() {}
 
  public:
   void start() {
@@ -32,7 +35,8 @@ class server {
         boost::asio::ip::tcp::socket socket{_context};
 
         _acceptor.accept(socket);
-        BOOST_LOG_TRIVIAL(debug) << "[" << counter << "] Connection established";
+        BOOST_LOG_TRIVIAL(debug)
+            << "[" << counter << "] Connection established";
         auto ans = std::async(std::launch::async,
                               [&socket, this] { return do_session(socket); });
         if (ans.get()) {
@@ -90,7 +94,6 @@ class server {
       boost::beast::http::request<
           Body, boost::beast::http::basic_fields<Allocator>>&& req,
       Send&& send) {
-
     // Request path must be absolute and not contain "..".
     if (req.target() != "/v1/app/suggest") {
       BOOST_LOG_TRIVIAL(debug) << "Illegal request: " << req.target();
@@ -148,10 +151,12 @@ class server {
   }
 
  private:
-  std::string generate_message(const json& msg){
+  std::string generate_message(const json& msg) {
     if (msg.contains("input")) {
       BOOST_LOG_TRIVIAL(debug) << "Message: " << msg.dump();
-      return json{{"suggestions", _handler.read(msg["input"].get<std::string>())}}.dump();
+      return json{
+          {"suggestions", _handler.read(msg["input"].get<std::string>())}}
+          .dump();
     } else {
       return std::string{R"({"suggestions":[]})"};
     }
