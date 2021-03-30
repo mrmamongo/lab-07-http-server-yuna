@@ -8,6 +8,9 @@
 
 #include <common.hpp>
 
+#include <utility>
+#include <string>
+
 class server {
  public:
   server(const std::string& host, size_t port)
