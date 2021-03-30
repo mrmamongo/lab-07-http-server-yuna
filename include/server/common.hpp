@@ -6,6 +6,16 @@
 #define HTTP_SERVER_COMMON_HPP
 
 
+#include <boost/log/trivial.hpp>
+#include <boost/log/core.hpp>
+#include <boost/log/expressions.hpp>
+#include <boost/log/sinks/text_file_backend.hpp>
+#include <boost/log/utility/setup/file.hpp>
+#include <boost/log/utility/setup/console.hpp>
+#include <boost/log/utility/setup/common_attributes.hpp>
+#include <boost/log/sources/severity_logger.hpp>
+#include <boost/log/sources/record_ostream.hpp>
+
 #include <boost/beast/core.hpp>
 
 #include <boost/beast/http.hpp>
@@ -15,13 +25,23 @@
 #include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
-#include <logger.hpp>
 
 #include <iostream>
 #include <shared_mutex>
 #include <set>
 #include <chrono>
 #include <fstream>
+
+void init(){
+  boost::log::add_file_log( boost::log::keywords::file_name = "logs/server_%5N.log",
+                            boost::log::keywords::rotation_size = 10 * 1024 * 1024,
+                            boost::log::keywords::time_based_rotation =
+                                boost::log::sinks::file::rotation_at_time_point(0, 0, 0),
+                            boost::log::keywords::format = "[%TimeStamp%][%ThreadID%][%Severity%]: %Message%");
+  boost::log::add_console_log(
+    std::cout, boost::log::keywords::format = "[%TimeStamp%][%ThreadID%][%Severity%]: %Message%"
+  );
+}
 
 template<class Stream>
 struct send_lambda {
@@ -60,8 +80,8 @@ class suggest_handler {
     }
   };
  public:
-  explicit suggest_handler(logger::logger& logger, const std::string& path = "data/suggestions.json")
-      :_path{path}, _logger(logger){
+  explicit suggest_handler( const std::string& path = "data/suggestions.json")
+      :_path{path}{
     start_updating();
   }
   suggest_handler(const suggest_handler&) = delete;
@@ -96,9 +116,9 @@ class suggest_handler {
         write(sug);
       }
 
-      LOG(_logger, l_debug)
+      BOOST_LOG_TRIVIAL(debug)
           << "Collection updated. New size: " << _suggestions.size()
-          << " size before: " << last_size << karoche;
+          << " size before: " << last_size;
     }
   }
 
@@ -142,7 +162,6 @@ class suggest_handler {
   // Container: set<pair>(?) vector(?)
   std::set<suggestion, suggest_comparator> _suggestions;
 
-  logger::logger& _logger;
   std::thread _updating_thread;
 };
 

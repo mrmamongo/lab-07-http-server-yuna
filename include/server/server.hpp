@@ -13,38 +13,38 @@ class server {
       : _context{1},
         _acceptor{_context,
                   {boost::asio::ip::address::from_string(host),
-                   static_cast<unsigned short>((port))}}, _logger("server"), _handler(_logger) {}
+                   static_cast<unsigned short>((port))}}, _handler() {}
   server(const std::string& host, size_t port, const std::string& suggestions_path)
       : _context{1},
         _acceptor{_context,
                   {boost::asio::ip::address::from_string(host),
-                   static_cast<unsigned short>((port))}}, _logger("server"), _handler(_logger, suggestions_path) {}
+                   static_cast<unsigned short>((port))}}, _handler( suggestions_path) {}
   ~server(){}
 
  public:
   void start() {
     try {
-      LOG(_logger, l_debug)
+      BOOST_LOG_TRIVIAL(debug)
           << "Starting server at "
           << _acceptor.local_endpoint().address().to_string() << ":"
-          << _acceptor.local_endpoint().port() << karoche;
+          << _acceptor.local_endpoint().port();
       for (size_t counter = 1000;; ++counter) {
         boost::asio::ip::tcp::socket socket{_context};
 
         _acceptor.accept(socket);
-        LOG(_logger, l_info) << "[" << counter << "] Connection established" << karoche;
+        BOOST_LOG_TRIVIAL(debug) << "[" << counter << "] Connection established";
         auto ans = std::async(std::launch::async,
                               [&socket, this] { return do_session(socket); });
         if (ans.get()) {
-          LOG(_logger, l_info)
-              << "[" << counter << "] Message responded. Status OK" << karoche;
+          BOOST_LOG_TRIVIAL(info)
+              << "[" << counter << "] Message responded. Status OK";
         } else {
-          LOG(_logger, l_info)
-              << "[" << counter << "] Message responded. Status FAIL" << karoche;
+          BOOST_LOG_TRIVIAL(info)
+              << "[" << counter << "] Message responded. Status FAIL";
         }
       }
     } catch (std::exception& e) {
-      LOG(_logger, l_fatal) << "An error occurred: " << e.what() << karoche;
+      BOOST_LOG_TRIVIAL(fatal) << "An error occurred: " << e.what();
     }
   }
 
@@ -93,7 +93,7 @@ class server {
 
     // Request path must be absolute and not contain "..".
     if (req.target() != "/v1/app/suggest") {
-      LOG(_logger, l_error) << "Illegal request: " << req.target() << karoche;
+      BOOST_LOG_TRIVIAL(debug) << "Illegal request: " << req.target();
       return send(send_request(req, ("Illegal request"), bad_request));
     }
 
@@ -101,17 +101,17 @@ class server {
 
     // Handle an unknown error
     if (ec) {
-      LOG(_logger, l_error) << "An unknown error: " << ec.message() << karoche;
+      BOOST_LOG_TRIVIAL(error) << "An unknown error: " << ec.message();
       return send(send_request(req, ec.message(), server_error));
     }
 
     if (req.method() == boost::beast::http::verb::post) {
       try {
         const auto body = json::parse(req.body());
-        LOG(_logger, l_debug) << "Body read: " << body.dump() << karoche;
+        BOOST_LOG_TRIVIAL(debug) << "Body read: " << body.dump();
         return send(send_request(req, generate_message(body), message));
       } catch (std::exception& e) {
-        LOG(_logger, l_error) << "Body reading error: " << e.what() << karoche;
+        BOOST_LOG_TRIVIAL(error) << "Body reading error: " << e.what();
         return send(send_request(req, ("Wrong body type"), bad_request));
       }
     } else {
@@ -130,13 +130,13 @@ class server {
       boost::beast::http::read(socket, buffer, req, ec);
       if (ec == boost::beast::http::error::end_of_stream) break;
       if (ec) {
-        LOG(_logger, l_error) << "Reading error: " << ec.message() << karoche;
+        BOOST_LOG_TRIVIAL(error) << "Reading error: " << ec.message();
         good = false;
       }
 
       handle_request(std::move(req), lambda);
       if (ec) {
-        LOG(_logger, l_error) << "Writing error: " << ec.message() << karoche;
+        BOOST_LOG_TRIVIAL(error) << "Writing error: " << ec.message();
         good = false;
       }
       if (close) {
@@ -150,7 +150,7 @@ class server {
  private:
   std::string generate_message(const json& msg){
     if (msg.contains("input")) {
-      LOG(_logger, l_debug) << "Message: " << msg.dump() << karoche;
+      BOOST_LOG_TRIVIAL(debug) << "Message: " << msg.dump();
       return json{{"suggestions", _handler.read(msg["input"].get<std::string>())}}.dump();
     } else {
       return std::string{R"({"suggestions":[]})"};
@@ -160,8 +160,6 @@ class server {
  private:
   boost::asio::io_context _context;
   boost::asio::ip::tcp::acceptor _acceptor;
-  logger::logger _logger;
-
   suggest_handler _handler;
 };
 

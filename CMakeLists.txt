@@ -22,33 +22,21 @@ option(BUILD_COVERAGE "Build code coverage" OFF)
 #)
 
 project(http-server)
-string(APPEND CMAKE_CXX_FLAGS " -pedantic -Werror -Wall -Wextra")
-string(APPEND CMAKE_CXX_FLAGS " -Wno-unused-command-line-argument")
+string(APPEND CMAKE_CXX_FLAGS " -pedantic -Wall -Wextra")
+#string(APPEND CMAKE_CXX_FLAGS " -Wno-unused-command-line-argument")
 string(APPEND CMAKE_CXX_FLAGS " -Wshadow -Wnon-virtual-dtor")
 
 set(Boost_INCLUDE_DIR /home/lamp/boost_1_75_0)
 add_definitions(-DBOOST_LOG_DYN_LINK)
 
-find_package(GTest CONFIG REQUIRED)
-
 find_package(Boost COMPONENTS system thread filesystem log program_options date_time REQUIRED)
-
-find_package(nlohmann_json)
-
+add_subdirectory(third-party/json)
+#set(nlohmann_json_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third-party/json)
+#find_package(nlohmann_json REQUIRED)
+message(nlohmann_json_DIR)
 find_package(Threads)
 
-set(Boost_L Boost::log Boost::log_setup Boost::thread Boost::system Boost::filesystem Boost::date_time)
-
-#===================================== LOGGER =====================================
-add_library(logger INTERFACE)
-
-target_include_directories(logger INTERFACE
-        include/logger
-        )
-
-target_link_libraries(logger INTERFACE ${Boost_L})
-#===================================== LOGGER =====================================
-
+set(Boost_L Boost::log Boost::log_setup Boost::thread Boost::system Boost::filesystem Boost::date_time nlohmann_json::nlohmann_json)
 
 #===================================== SERVER =====================================
 add_library(server INTERFACE)
@@ -57,7 +45,7 @@ target_include_directories(server INTERFACE
         include/server
         )
 
-target_link_libraries(server INTERFACE logger ${Boost_L} nlohmann_json::nlohmann_json pthread
+target_link_libraries(server INTERFACE ${Boost_L} pthread
         )
 #===================================== SERVER =====================================
 
@@ -66,7 +54,7 @@ add_executable(server_exe
         sources/server_main.cpp
         )
 
-target_link_libraries(server_exe server Boost::program_options logger ${Boost_L} nlohmann_json::nlohmann_json pthread
+target_link_libraries(server_exe server Boost::program_options ${Boost_L} pthread
         )
 #===================================== SERVER_EXE =================================
 
@@ -75,5 +63,5 @@ add_executable(server_example
         demo/server_example.cpp
         )
 
-target_link_libraries(server_example Boost::headers ${Boost_L} logger nlohmann_json::nlohmann_json)
+target_link_libraries(server_example Boost::headers ${Boost_L} )
 #===================================== SERVER_EXAMPLE =============================
