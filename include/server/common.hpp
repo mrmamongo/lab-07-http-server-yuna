@@ -1,3 +1,4 @@
+// Copyright 2021 lamp
 //
 // Created by lamp on 17.03.2021.
 //
@@ -22,8 +23,10 @@
 #include <boost/beast/version.hpp>
 #include <boost/asio.hpp>
 
-#include <nlohmann/json.hpp>
+#include <utility>
+#include <string>
 
+#include <nlohmann/json.hpp>
 using json = nlohmann::json;
 
 #include <iostream>
@@ -37,10 +40,12 @@ void init(){
       boost::log::keywords::file_name = "logs/server_%5N.log",
       boost::log::keywords::rotation_size = 10 * 1024 * 1024,
       boost::log::keywords::time_based_rotation =
-          boost::log::sinks::file::rotation_at_time_point(0, 0, 0),
-      boost::log::keywords::format = "[%TimeStamp%][%ThreadID%][%Severity%]: %Message%");
+boost::log::sinks::file::rotation_at_time_point(0, 0, 0),
+      boost::log::keywords::format =
+          "[%TimeStamp%][%ThreadID%][%Severity%]: %Message%");
   boost::log::add_console_log(
-    std::cout, boost::log::keywords::format = "[%TimeStamp%][%ThreadID%][%Severity%]: %Message%");
+    std::cout, boost::log::keywords::format =
+"[%TimeStamp%][%ThreadID%][%Severity%]: %Message%");
 }
 
 template<class Stream>

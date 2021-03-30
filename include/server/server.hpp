@@ -1,9 +1,10 @@
+// Copyright 2021 lamp
 //
 // Created by lamp on 17.03.2021.
 //
 
-#ifndef HTTP_SERVER_SERVER_HPP
-#define HTTP_SERVER_SERVER_HPP
+#ifndef INCLUDE_SERVER_SERVER_HPP_
+#define INCLUDE_SERVER_SERVER_HPP_
 
 #include <common.hpp>
 
@@ -13,14 +14,14 @@ class server {
       : _context{1},
         _acceptor{_context,
                   {boost::asio::ip::address::from_string(host),
-                   static_cast<unsigned short>((port))}},
+                   static_cast<uint16_t>((port))}},
         _handler() {}
   server(const std::string& host, size_t port,
          const std::string& suggestions_path)
       : _context{1},
         _acceptor{_context,
                   {boost::asio::ip::address::from_string(host),
-                   static_cast<unsigned short>((port))}},
+                   static_cast<uint16_t>((port))}},
         _handler(suggestions_path) {}
   ~server() {}
 
@@ -168,4 +169,4 @@ class server {
   suggest_handler _handler;
 };
 
-#endif  // HTTP_SERVER_SERVER_HPP
+#endif  // INCLUDE_SERVER_SERVER_HPP_
