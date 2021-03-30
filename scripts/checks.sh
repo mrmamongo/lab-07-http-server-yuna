@@ -1,11 +1,5 @@
 #!/usr/bin/env bash
-cd /home \
-    && wget http://downloads.sourceforge.net/project/boost/boost/1.68.0/boost_1_68_0.tar.gz \
-    && tar xfz boost_1_68_0.tar.gz \
-    && rm boost_1_68_0.tar.gz \
-    && cd boost_1_68_0 \
-    && ./bootstrap.sh --with-libraries=system \
-    && ./b2 install
+
 set -e
 
 declare -r FILTER=-build/c++11,-runtime/references,\
